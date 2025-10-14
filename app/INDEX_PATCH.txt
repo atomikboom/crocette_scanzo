@@ -1,0 +1,11 @@
+
+--- app/templates/index.html (estratto) ---
+Sostituisci la riga con:
+<p class="text-sm opacity-80 mb-2">Valore crocetta: <b>€1.00</b> (valido anche per staff)</p>
+CON questa:
+<p class="text-sm opacity-80 mb-2">Valore crocetta: <b>€2.00</b> (valido anche per staff)</p>
+
+Aggiungi vicino al titolo "Regolamento Saldi" un link opzionale al PDF (se copiato in app/static):
+<h2 class="text-xl font-semibold mb-3">Regolamento Saldi
+  <a href="/static/Calendario_Paste_2025_2026.pdf" class="ml-3 text-sm underline opacity-80">Calendario Paste (PDF)</a>
+</h2>

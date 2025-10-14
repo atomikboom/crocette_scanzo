@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="it">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}Dashboard Crocette{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root {
+      --team-yellow: #facc15;
+      /* giallo */
+      --team-red: #ef4444;
+      /* rosso  */
+
+      /* dark default */
+      --bg-page: #0a0a0a;
+      --bg-surface-1: #0f0f0f;
+      --bg-surface-2: #1f1f1f;
+      --text-primary: #e5e7eb;
+      --text-muted: #9ca3af;
+      --border-col: #374151;
+      --tab-on: var(--bg-surface-2);
+      --tab-off: var(--bg-surface-1);
+    }
+
+    body.theme-dark {
+      background: var(--bg-page);
+      color: var(--text-primary);
+    }
+
+    body.theme-light {
+      --bg-page: #ffffff;
+      --bg-surface-1: #ffffff;
+      --bg-surface-2: #f3f4f6;
+      --text-primary: #111827;
+      --text-muted: #6b7280;
+      --border-col: #e5e7eb;
+      --tab-on: var(--bg-surface-2);
+      --tab-off: var(--bg-surface-1);
+    }
+
+    .bg-neutral-900 {
+      background-color: var(--bg-surface-1) !important;
+    }
+
+    .bg-neutral-800 {
+      background-color: var(--bg-surface-2) !important;
+    }
+
+    .border-neutral-700 {
+      border-color: var(--border-col) !important;
+    }
+
+    .text-neutral-400 {
+      color: var(--text-muted) !important;
+    }
+
+    .border-team {
+      border-color: var(--team-yellow) !important;
+    }
+
+    .text-team {
+      color: var(--team-yellow) !important;
+    }
+
+    .pill {
+      background: linear-gradient(90deg, var(--team-yellow), var(--team-red));
+      color: #111827;
+      font-weight: 700;
+    }
+
+    .tab {
+      background: var(--tab-off);
+    }
+
+    .tab[aria-selected="true"] {
+      background: var(--tab-on);
+      outline: 2px solid var(--team-yellow);
+    }
+
+    #theme-icon[data-theme="dark"]::before {
+      content: "🌙";
+    }
+
+    #theme-icon[data-theme="light"]::before {
+      content: "☀️";
+    }
+  </style>
+
+  <script>
+    (function () {
+      try {
+        const key = "theme";
+        const saved = localStorage.getItem(key);
+        const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const theme = saved || (prefersDark ? "dark" : "light");
+        document.addEventListener("DOMContentLoaded", () => setTheme(theme));
+        function setTheme(t) {
+          document.body.classList.toggle("theme-dark", t === "dark");
+          document.body.classList.toggle("theme-light", t === "light");
+          localStorage.setItem(key, t);
+          const el = document.getElementById("theme-icon");
+          if (el) el.setAttribute("data-theme", t);
+        }
+        window.__setTheme = setTheme;
+      } catch (e) { }
+    })();
+  </script>
+</head>
+
+<body class="theme-dark">
+  <header class="border-b border-neutral-700 bg-neutral-900">
+    <div class="max-w-6xl mx-auto flex items-center justify-between px-3 py-3">
+      <a href="/" class="flex items-center gap-2">
+        <span class="inline-block w-2 h-6 pill rounded"></span>
+        <span class="font-bold">Dashboard Crocette</span>
+      </a>
+      <nav class="flex items-center gap-3">
+        <a href="/" class="text-sm opacity-80 hover:opacity-100">Home</a>
+        <a href="/storico?kind=debit" class="text-sm opacity-80 hover:opacity-100">Storico</a>
+
+        {% if user %}
+        <a href="/movements"
+          class="ml-2 px-3 py-1 rounded-lg border border-neutral-700 hover:border-team hover:text-team text-sm">➕
+          Aggiungi</a>
+        <form method="post" action="/logout">
+          <button class="ml-2 px-3 py-1 rounded-lg border border-neutral-700 hover:border-team text-sm">Logout</button>
+        </form>
+        {% else %}
+        <a href="/login"
+          class="ml-2 px-3 py-1 rounded-lg border border-neutral-700 hover:border-team hover:text-team text-sm">Login</a>
+        {% endif %}
+
+        <button id="theme-toggle"
+          class="ml-2 px-3 py-1 rounded-lg border border-neutral-700 hover:border-team flex items-center gap-2">
+          <i id="theme-icon" aria-hidden="true" data-theme="dark"></i>
+          <span class="text-sm">Tema</span>
+        </button>
+        <script>
+          document.addEventListener("DOMContentLoaded", function () {
+            const btn = document.getElementById("theme-toggle");
+            btn?.addEventListener("click", function () {
+              const isDark = document.body.classList.contains("theme-dark");
+              window.__setTheme(isDark ? "light" : "dark");
+            });
+          });
+        </script>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-3 py-6">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="mt-10 py-6 text-center text-sm text-neutral-400">
+    <span class="opacity-70">© Crocette —</span>
+    <span class="ml-1"><span class="text-team font-semibold">SCANZOROSCIATE PALLAVOLO</span></span>
+  </footer>
+  <script src="/static/app.js" defer></script>
+
+</body>
+
+</html>

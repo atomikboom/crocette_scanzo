@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="text-xl font-semibold mb-3">Pannello Admin</h2>
+<div class="grid md:grid-cols-2 gap-6">
+  <section class="p-4 bg-neutral-800 rounded-2xl">
+    <h3 class="font-semibold mb-2">Membri</h3>
+    <form action="/admin/member" method="post" class="flex gap-2">
+      <input name="name" class="px-3 py-2 rounded bg-neutral-900" placeholder="Nuovo membro" required />
+      <button class="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-500">Aggiungi</button>
+    </form>
+    <ul class="mt-3 text-sm opacity-80">
+      {% for m in members %}<li>{{ m.name }}</li>{% endfor %}
+    </ul>
+  </section>
+  <section class="p-4 bg-neutral-800 rounded-2xl">
+    <h3 class="font-semibold mb-2">Regole</h3>
+    <form action="/admin/rule" method="post" class="grid grid-cols-2 gap-2">
+      <input name="title" class="px-3 py-2 rounded bg-neutral-900 col-span-2" placeholder="Titolo" required />
+      <input name="description" class="px-3 py-2 rounded bg-neutral-900 col-span-2" placeholder="Descrizione" />
+      <input name="crocette" type="number" value="0" class="px-3 py-2 rounded bg-neutral-900" />
+      <input name="casse" type="number" value="0" class="px-3 py-2 rounded bg-neutral-900" />
+      <button class="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-500 col-span-2">Aggiungi</button>
+    </form>
+    <ul class="mt-3 text-sm opacity-80">
+      {% for r in rules %}<li>{{ r.title }} — {{ r.crocette }} ❌ {% if r.casse %}/ {{ r.casse }} casse{% endif %}</li>{% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

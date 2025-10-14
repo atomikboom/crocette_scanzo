@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+  <h1 class="text-2xl font-bold">Nuovo movimento</h1>
+
+  <form method="post" action="/movements/new" class="space-y-4 p-4 rounded-2xl bg-neutral-800">
+    <!-- Membro -->
+    <div>
+      <label class="block text-sm opacity-80 mb-1">Giocatore</label>
+      <select name="member_id" class="w-full px-3 py-2 rounded bg-neutral-900" required>
+        {% for m in members %}
+        <option value="{{ m.id }}">{{ m.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Tipo -->
+    <div>
+      <label class="block text-sm opacity-80 mb-1">Tipo movimento</label>
+      <select name="kind" class="w-full px-3 py-2 rounded bg-neutral-900" required>
+        <option value="debit" selected>Crocette PRESE (debito)</option>
+        <option value="credit">Crocette PAGATE (credito)</option>
+      </select>
+    </div>
+
+    <!-- Regola -->
+    <div>
+      <label class="block text-sm opacity-80 mb-1">Regola (opzionale)</label>
+      <select name="rule_id" id="rule" class="w-full px-3 py-2 rounded bg-neutral-900">
+        <option value="">— nessuna —</option>
+        {% for r in rules %}
+        <option value="{{ r.id }}"
+                data-crocette="{{ r.crocette }}"
+                data-title="{{ r.title|lower }}">{{ r.title }}{% if r.crocette %} ({{ r.crocette }} ❌){% endif %}</option>
+        {% endfor %}
+      </select>
+      <p class="text-xs opacity-60 mt-1">Se la regola ha un valore fisso, il campo crocette si compila da solo.</p>
+    </div>
+
+    <!-- Giorno partita / raddoppio -->
+    <div class="flex items-center gap-2">
+      <input id="match_day" type="checkbox" class="accent-white" />
+      <label for="match_day" class="text-sm">Giorno partita (raddoppia tutte le crocette tranne <b>cartellino giallo</b>; il <b>rosso</b> è già doppio)</label>
+    </div>
+
+    <!-- Crocette -->
+    <div>
+      <label class="block text-sm opacity-80 mb-1">Crocette</label>
+      <input id="crocette" name="crocette" type="number" min="0" class="w-full px-3 py-2 rounded bg-neutral-900" placeholder="0" required />
+    </div>
+
+    <!-- Nota -->
+    <div>
+      <label class="block text-sm opacity-80 mb-1">Nota (opzionale)</label>
+      <input name="note" type="text" class="w-full px-3 py-2 rounded bg-neutral-900" placeholder="Es. Gesto di stizza" />
+    </div>
+
+    <div class="pt-2">
+      <button class="px-4 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-700">Salva</button>
+      <a href="/" class="ml-2 text-sm underline opacity-80">Torna alla dashboard</a>
+    </div>
+  </form>
+
+  <div class="text-xs opacity-60">
+    Suggerimenti: usa <b>credit</b> per crocette pagate o bonus (es. 🎂 dolce extra: 10 crocette a credito).
+  </div>
+</div>
+
+<!-- Autocompilazione crocette + raddoppio -->
+<script>
+const ruleSel = document.getElementById('rule');
+const croField = document.getElementById('crocette');
+const matchDay = document.getElementById('match_day');
+
+function recompute(){
+  if(!ruleSel || !croField) return;
+  const opt = ruleSel.selectedOptions[0];
+  if(!opt) return;
+
+  const base = parseInt(opt.dataset.crocette || '0');
+  const title = (opt.dataset.title || '');
+
+  // Se la regola ha crocette fisse, proponi il valore (eventualmente raddoppiato)
+  // Se è variabile (base=0), NON sovrascrivere un valore già digitato
+  let v = (base > 0) ? base : (croField.value ? parseInt(croField.value) : 0);
+
+  // Raddoppio giorno partita (eccetto giallo; rosso già doppio → non raddoppio)
+  if (matchDay && matchDay.checked && v > 0 && !title.includes('giallo')) {
+    if (!title.includes('cartellino rosso')) {
+      v = v * 2;
+    }
+  }
+
+  // Imposta solo se base>0 o se campo era vuoto
+  if (base > 0 || !croField.value) {
+    croField.value = v || '';
+  }
+}
+
+ruleSel?.addEventListener('change', recompute);
+matchDay?.addEventListener('change', recompute);
+</script>
+{% endblock %}
