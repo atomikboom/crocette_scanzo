@@ -13,6 +13,8 @@ from .auth import create_access_token, verify_password, get_current_user
 from jose import jwt, JWTError
 from .auth import SECRET_KEY, ALGORITHM
 
+from seed_rules_2025_26 import main as seed_rules_main
+
 # ------------ CONFIG PATHS ------------
 APP_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(APP_DIR, "data")
@@ -178,6 +180,16 @@ async def index(request: Request, db: Session = Depends(get_db)):
         "upcoming_pastes": upcoming_pastes,
         "next_match": next_match,
     })
+
+from fastapi import HTTPException
+
+@app.post("/admin/reseed")
+async def admin_reseed(user: User = Depends(get_current_user)):
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Solo admin")
+    # esegue lo script di seed (usa DATABASE_URL dell'ambiente: Neon su Render)
+    seed_rules_main()
+    return RedirectResponse("/?reseed=ok", status_code=303)
 
 @app.get("/storico", response_class=HTMLResponse)
 async def storico(request: Request,
