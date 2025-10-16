@@ -13,8 +13,6 @@ from .auth import create_access_token, verify_password, get_current_user
 from jose import jwt, JWTError
 from .auth import SECRET_KEY, ALGORITHM
 
-from seed_rules_2025_26 import main as seed_rules_main
-
 # ------------ CONFIG PATHS ------------
 APP_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(APP_DIR, "data")
@@ -61,6 +59,14 @@ def aggregate(db: Session):
         "crocette_pagate": cre_croc,
         "crocette_da_pagare": max(0, deb_croc - cre_croc),
     }
+    
+def run_seed():
+    # import lazy con fallback a import relativo
+    try:
+        from seed_rules_2025_26 import main as _seed
+    except ImportError:
+        from .seed_rules_2025_26 import main as _seed  # se lo sposti in app/
+    _seed()
 
 # ------------ CALENDAR (SOLO TESTO LOCALE) ------------
 DEFAULT_CALENDAR = """\
@@ -187,8 +193,7 @@ from fastapi import HTTPException
 async def admin_reseed(user: User = Depends(get_current_user)):
     if user.role != "admin":
         raise HTTPException(status_code=403, detail="Solo admin")
-    # esegue lo script di seed (usa DATABASE_URL dell'ambiente: Neon su Render)
-    seed_rules_main()
+    run_seed()
     return RedirectResponse("/?reseed=ok", status_code=303)
 
 @app.get("/storico", response_class=HTMLResponse)
