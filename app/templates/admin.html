@@ -25,5 +25,15 @@
       {% for r in rules %}<li>{{ r.title }} — {{ r.crocette }} ❌ {% if r.casse %}/ {{ r.casse }} casse{% endif %}</li>{% endfor %}
     </ul>
   </section>
+  <section class="p-4 rounded-2xl bg-neutral-800 mb-4">
+  <h2 class="text-lg font-semibold mb-2">Regolamento</h2>
+  <form method="post" action="/admin/reseed" onsubmit="return confirm('Ricaricare il regolamento nel DB?');">
+    <button class="px-4 py-2 rounded-lg border border-neutral-700 hover:border-team">
+      🔁 Ricarica Regolamento nel DB
+    </button>
+  </form>
+  <p class="text-xs opacity-70 mt-2">Esegue lo script <code>seed_rules_2025_26.py</code> contro il DB Neon.</p>
+</section>
+
 </div>
 {% endblock %}
