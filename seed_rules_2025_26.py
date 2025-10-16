@@ -65,9 +65,7 @@ rules = [
     dict(title="Nomina di capitano", description="", crocette=10),
 
     # SANZIONI / POLICY (informative)
-    dict(title="POLICY: raddoppio giorno partita", description="Nel giorno partita tutte le crocette si raddoppiano tranne il cartellino giallo; il rosso è già doppio.", crocette=0),
-    dict(title="POLICY: valore economico crocette", description="Ogni crocetta vale simbolicamente €2.", crocette=0),
-    dict(title="POLICY: soglia 10/12 crocette", description="Cassa di birra o €20 in cassa squadra (informativa).", crocette=0),
+    dict(title="Altro", description="", crocette=1),
 ]
 
 def main():
