@@ -7,7 +7,7 @@ from datetime import datetime
 import os, re
 
 from .database import Base, engine, get_db
-from .models import User, Member, Rule, Movement
+from .models import User, Member, Rule, Movement, BagheroneScore
 from .auth import create_access_token, verify_password, get_current_user
 
 from jose import jwt, JWTError
@@ -59,14 +59,6 @@ def aggregate(db: Session):
         "crocette_pagate": cre_croc,
         "crocette_da_pagare": max(0, deb_croc - cre_croc),
     }
-    
-def run_seed():
-    # import lazy con fallback a import relativo
-    try:
-        from seed_rules_2025_26 import main as _seed
-    except ImportError:
-        from .seed_rules_2025_26 import main as _seed  # se lo sposti in app/
-    _seed()
 
 # ------------ CALENDAR (SOLO TESTO LOCALE) ------------
 DEFAULT_CALENDAR = """\
@@ -136,11 +128,22 @@ def save_calendar_text(text: str):
     with open(CAL_TXT, "w", encoding="utf-8") as f:
         f.write(text or "")
 
+def get_or_create_bagherone(db: Session) -> BagheroneScore:
+    row = db.query(BagheroneScore).first()
+    if not row:
+        row = BagheroneScore(giovani=0, vecchi=0)
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+    return row
+
+
 # ------------ ROUTES ------------
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request, db: Session = Depends(get_db)):
     rules = db.query(Rule).filter(Rule.active == True).all()
     members = db.query(Member).all()
+    bagherone = get_or_create_bagherone(db)
 
     rows = []
     for m in members:
@@ -185,16 +188,8 @@ async def index(request: Request, db: Session = Depends(get_db)):
         "calendar_text": cal_text,
         "upcoming_pastes": upcoming_pastes,
         "next_match": next_match,
+        "bagherone" : bagherone,
     })
-
-from fastapi import HTTPException
-
-@app.post("/admin/reseed")
-async def admin_reseed(user: User = Depends(get_current_user)):
-    if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Solo admin")
-    run_seed()
-    return RedirectResponse("/?reseed=ok", status_code=303)
 
 @app.get("/storico", response_class=HTMLResponse)
 async def storico(request: Request,
@@ -293,6 +288,7 @@ async def admin_page(request: Request, user: User = Depends(get_current_user), d
         "request": request,
         "members": db.query(Member).order_by(Member.name).all(),
         "rules": db.query(Rule).order_by(Rule.title).all(),
+        "bagherone": get_or_create_bagherone(db),
         "user": user,
     })
 
@@ -312,3 +308,16 @@ async def add_rule(user: User = Depends(get_current_user), db: Session = Depends
     db.add(Rule(title=title, description=description, crocette=crocette, casse=0))
     db.commit()
     return RedirectResponse("/admin?rule=ok", status_code=302)
+
+@app.post("/admin/bagherone")
+async def update_bagherone(user: User = Depends(get_current_user),
+                           db: Session = Depends(get_db),
+                           giovani: int = Form(...),
+                           vecchi: int = Form(...)):
+    if user.role != "admin":
+        return RedirectResponse("/", status_code=302)
+    row = get_or_create_bagherone(db)
+    row.giovani = max(0, int(giovani))
+    row.vecchi = max(0, int(vecchi))
+    db.commit()
+    return RedirectResponse("/admin?bagherone=ok", status_code=302)
