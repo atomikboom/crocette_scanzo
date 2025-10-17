@@ -4,11 +4,11 @@
 <div class="max-w-6xl mx-auto mb-4">
   <div class="grid grid-cols-2 gap-2" role="tablist" aria-label="Sezioni dashboard">
     <a id="tab-reg" href="#reg"
-       class="tab px-4 py-2 rounded-xl border border-neutral-700 hover:ring-team cursor-pointer block text-center"
-       aria-selected="false">📜 Regolamento</a>
+      class="tab px-4 py-2 rounded-xl border border-neutral-700 hover:ring-team cursor-pointer block text-center"
+      aria-selected="false">📜 Regolamento</a>
     <a id="tab-saldi" href="#saldi"
-       class="tab px-4 py-2 rounded-xl border border-neutral-700 hover:ring-team cursor-pointer block text-center"
-       aria-selected="true">🏛️ Saldi</a>
+      class="tab px-4 py-2 rounded-xl border border-neutral-700 hover:ring-team cursor-pointer block text-center"
+      aria-selected="true">🏛️ Saldi</a>
   </div>
 </div>
 
@@ -73,18 +73,18 @@
   <section class="p-4 rounded-2xl bg-neutral-800">
     <h2 class="text-sm font-semibold opacity-70 mb-2">ULTIMO SALDO</h2>
     {% if latest_movement %}
-      <div class="border-l-4 border-team pl-3">
-        <div class="text-sm opacity-80">
-          {{ latest_movement.created_at.strftime('%d/%m/%Y') }} — <b>{{ latest_movement.member.name }}</b>
-        </div>
-        <div class="mt-2 text-sm">
-          {% if latest_movement.crocette %}{{ latest_movement.crocette }} crocette{% endif %}
-          {% if latest_movement.rule %}<span class="opacity-70"> ({{ latest_movement.rule.title }})</span>{% endif %}
-          {% if latest_movement.note %} — {{ latest_movement.note }}{% endif %}
-        </div>
+    <div class="border-l-4 border-team pl-3">
+      <div class="text-sm opacity-80">
+        {{ latest_movement.created_at.strftime('%d/%m/%Y') }} — <b>{{ latest_movement.member.name }}</b>
       </div>
+      <div class="mt-2 text-sm">
+        {% if latest_movement.crocette %}{{ latest_movement.crocette }} crocette{% endif %}
+        {% if latest_movement.rule %}<span class="opacity-70"> ({{ latest_movement.rule.title }})</span>{% endif %}
+        {% if latest_movement.note %} — {{ latest_movement.note }}{% endif %}
+      </div>
+    </div>
     {% else %}
-      <div class="opacity-70 text-sm">Nessun movimento ancora presente.</div>
+    <div class="opacity-70 text-sm">Nessun movimento ancora presente.</div>
     {% endif %}
   </section>
 
@@ -117,18 +117,21 @@
     <h2 class="text-xl font-semibold mb-3">Elenco Nomi</h2>
     <div id="members" class="flex flex-col gap-3">
       {% for r in rows %}
-      <div class="p-3 rounded-xl bg-neutral-900 member"
-           data-name="{{ r.name | lower }}"
-           data-cpre="{{ r.crocette_prese }}"
-           data-cpay="{{ r.crocette_pagate }}"
-           data-cdue="{{ r.crocette_da_pagare }}"
-           data-last="{{ r.last.isoformat() if r.last else '' }}">
+      <div class="p-3 rounded-xl bg-neutral-900 member" data-name="{{ r.name | lower }}"
+        data-cpre="{{ r.crocette_prese }}" data-cpay="{{ r.crocette_pagate }}" data-cdue="{{ r.crocette_da_pagare }}"
+        data-last="{{ r.last.isoformat() if r.last else '' }}">
         <div class="font-semibold text-lg">{{ r.name }}</div>
         <div class="text-sm opacity-80">Ultimo saldo: {{ r.last.strftime('%d/%m/%Y %H:%M') if r.last else '—' }}</div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2 text-sm">
-          <div class="p-2 rounded bg-neutral-800">Crocette prese <div class="text-xl font-bold">{{ r.crocette_prese }}</div></div>
-          <div class="p-2 rounded bg-neutral-800">Crocette pagate <div class="text-xl font-bold">{{ r.crocette_pagate }}</div></div>
-          <div class="p-2 rounded bg-neutral-800">Crocette da pagare <div class="text-xl font-bold">{{ r.crocette_da_pagare }}</div></div>
+          <div class="p-2 rounded bg-neutral-800">Crocette prese <div class="text-xl font-bold">{{ r.crocette_prese }}
+            </div>
+          </div>
+          <div class="p-2 rounded bg-neutral-800">Crocette pagate <div class="text-xl font-bold">{{ r.crocette_pagate }}
+            </div>
+          </div>
+          <div class="p-2 rounded bg-neutral-800">Crocette da pagare <div class="text-xl font-bold">{{
+              r.crocette_da_pagare }}</div>
+          </div>
         </div>
       </div>
       {% endfor %}
@@ -139,7 +142,8 @@
   <section class="p-4 rounded-2xl bg-neutral-800">
     <div class="flex items-center justify-between">
       <h2 class="text-xl font-semibold mb-3">Questo Mese</h2>
-      <a href="/storico?kind=debit" class="text-sm underline opacity-80 hover:text-team">Vedi tutte le crocette prese →</a>
+      <a href="/storico?kind=debit" class="text-sm underline opacity-80 hover:text-team">Vedi tutte le crocette prese
+        →</a>
     </div>
     <ul class="space-y-2 text-sm max-h-80 overflow-auto">
       {% for m in last_month %}
@@ -164,13 +168,13 @@
       <h2 class="text-xl font-semibold mb-3">Prossime paste (🍕)</h2>
       <ul class="space-y-2 text-sm">
         {% if upcoming_pastes %}
-          {% for e in upcoming_pastes %}
-          <li class="p-2 rounded bg-neutral-900">
-            <b>{{ e.date.strftime('%d/%m/%Y') }}</b> — {{ e.emoji }} {{ e.who }}
-          </li>
-          {% endfor %}
+        {% for e in upcoming_pastes %}
+        <li class="p-2 rounded bg-neutral-900">
+          <b>{{ e.date.strftime('%d/%m/%Y') }}</b> — {{ e.emoji }} {{ e.who }}
+        </li>
+        {% endfor %}
         {% else %}
-          <li class="opacity-70">Nessuna pasta prevista.</li>
+        <li class="opacity-70">Nessuna pasta prevista.</li>
         {% endif %}
       </ul>
     </div>
@@ -178,25 +182,46 @@
     <div class="p-4 rounded-2xl bg-neutral-800">
       <h2 class="text-xl font-semibold mb-3">Prossima partita</h2>
       {% if next_match %}
-        <div class="p-3 rounded-xl bg-neutral-900">
-          <div class="text-sm opacity-70">{{ next_match.emoji == '🏠' and 'In casa (Scanzo)' or 'Trasferta' }}</div>
-          <div class="text-lg font-semibold">{{ next_match.date.strftime('%d/%m/%Y') }}</div>
-          <div class="text-sm mt-1">{{ next_match.who }}</div>
-        </div>
+      <div class="p-3 rounded-xl bg-neutral-900">
+        <div class="text-sm opacity-70">{{ next_match.emoji == '🏠' and 'In casa (Scanzo)' or 'Trasferta' }}</div>
+        <div class="text-lg font-semibold">{{ next_match.date.strftime('%d/%m/%Y') }}</div>
+        <div class="text-sm mt-1">{{ next_match.who }}</div>
+      </div>
       {% else %}
-        <div class="opacity-70 text-sm">Nessuna partita in calendario.</div>
+      <div class="opacity-70 text-sm">Nessuna partita in calendario.</div>
       {% endif %}
     </div>
   </section>
+
+  <!-- Punteggio Bagherone -->
+  <section class="p-4 rounded-2xl bg-neutral-800">
+    <h2 class="text-xl font-semibold mb-4">Punteggio Bagherone</h2>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="p-4 rounded-xl bg-neutral-900 text-center">
+        <div class="text-sm opacity-70">Giovani</div>
+        <div class="text-3xl font-extrabold">{{ bagherone.giovani }}</div>
+      </div>
+      <div class="p-4 rounded-xl bg-neutral-900 text-center">
+        <div class="text-sm opacity-70">Vecchi</div>
+        <div class="text-3xl font-extrabold">{{ bagherone.vecchi }}</div>
+      </div>
+    </div>
+    <p class="text-xs opacity-60 mt-2">
+      Ultimo aggiornamento: {{ bagherone.updated_at.strftime('%d/%m/%Y %H:%M') if bagherone.updated_at else '—' }}
+    </p>
+  </section>
+
 
   <!-- Editor calendario (solo admin) -->
   {% if user and user.role == 'admin' %}
   <section class="p-4 rounded-2xl bg-neutral-800">
     <h2 class="text-xl font-semibold mb-3">Calendario (testo modificabile)</h2>
     <form method="post" action="/calendar" class="space-y-3">
-      <textarea name="text" rows="10" class="w-full p-3 rounded bg-neutral-900 font-mono text-sm" spellcheck="false">{{ calendar_text }}</textarea>
+      <textarea name="text" rows="10" class="w-full p-3 rounded bg-neutral-900 font-mono text-sm"
+        spellcheck="false">{{ calendar_text }}</textarea>
       <p class="text-xs opacity-70">
-        Formato consigliato: <code>YYYY-MM-DD 🍕 Nome</code> | <code>YYYY-MM-DD 🏠 Avversario</code> | <code>YYYY-MM-DD ✈️ Avversario</code> | <code>YYYY-MM-DD 🎂 Nome</code>
+        Formato consigliato: <code>YYYY-MM-DD 🍕 Nome</code> | <code>YYYY-MM-DD 🏠 Avversario</code> |
+        <code>YYYY-MM-DD ✈️ Avversario</code> | <code>YYYY-MM-DD 🎂 Nome</code>
       </p>
       <button class="px-4 py-2 rounded-lg border border-neutral-700 hover:ring-team">Salva calendario</button>
       <a href="/calendar.txt" class="text-sm underline opacity-80 ml-2" target="_blank">Scarica come .txt</a>
@@ -207,32 +232,33 @@
 
 <!-- Script tab inline -->
 <script>
-(function(){
-  const regBtn = document.getElementById('tab-reg');
-  const salBtn = document.getElementById('tab-saldi');
-  const reg = document.getElementById('pane-reg');
-  const sal = document.getElementById('pane-saldi');
+  (function () {
+    const regBtn = document.getElementById('tab-reg');
+    const salBtn = document.getElementById('tab-saldi');
+    const reg = document.getElementById('pane-reg');
+    const sal = document.getElementById('pane-saldi');
 
-  function setActive(btn, on){ if(!btn) return;
-    btn.setAttribute('aria-selected', on ? 'true' : 'false');
-  }
-  function show(which){
-    const isReg = which === 'reg';
-    reg?.classList.toggle('hidden', !isReg);
-    sal?.classList.toggle('hidden', isReg);
-    setActive(regBtn, isReg);
-    setActive(salBtn, !isReg);
-    try { localStorage.setItem('activeTab', which); } catch {}
-    if (location.hash !== '#' + which) history.replaceState(null, '', '#' + which);
-  }
-  const initial = (location.hash || '').replace('#','') || (localStorage.getItem('activeTab') || 'saldi');
-  show(initial === 'reg' ? 'reg' : 'saldi');
-  regBtn?.addEventListener('click', (e)=>{ e.preventDefault(); show('reg'); });
-  salBtn?.addEventListener('click', (e)=>{ e.preventDefault(); show('saldi'); });
-  window.addEventListener('hashchange', ()=> {
-    const h = (location.hash || '').replace('#','');
-    show(h === 'reg' ? 'reg' : 'saldi');
-  });
-})();
+    function setActive(btn, on) {
+      if (!btn) return;
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    }
+    function show(which) {
+      const isReg = which === 'reg';
+      reg?.classList.toggle('hidden', !isReg);
+      sal?.classList.toggle('hidden', isReg);
+      setActive(regBtn, isReg);
+      setActive(salBtn, !isReg);
+      try { localStorage.setItem('activeTab', which); } catch { }
+      if (location.hash !== '#' + which) history.replaceState(null, '', '#' + which);
+    }
+    const initial = (location.hash || '').replace('#', '') || (localStorage.getItem('activeTab') || 'saldi');
+    show(initial === 'reg' ? 'reg' : 'saldi');
+    regBtn?.addEventListener('click', (e) => { e.preventDefault(); show('reg'); });
+    salBtn?.addEventListener('click', (e) => { e.preventDefault(); show('saldi'); });
+    window.addEventListener('hashchange', () => {
+      const h = (location.hash || '').replace('#', '');
+      show(h === 'reg' ? 'reg' : 'saldi');
+    });
+  })();
 </script>
 {% endblock %}
