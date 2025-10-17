@@ -1,264 +1,52 @@
 {% extends "base.html" %}
 {% block content %}
-<!-- Tabs (Regolamento | Saldi) -->
-<div class="max-w-6xl mx-auto mb-4">
-  <div class="grid grid-cols-2 gap-2" role="tablist" aria-label="Sezioni dashboard">
-    <a id="tab-reg" href="#reg"
-      class="tab px-4 py-2 rounded-xl border border-neutral-700 hover:ring-team cursor-pointer block text-center"
-      aria-selected="false">📜 Regolamento</a>
-    <a id="tab-saldi" href="#saldi"
-      class="tab px-4 py-2 rounded-xl border border-neutral-700 hover:ring-team cursor-pointer block text-center"
-      aria-selected="true">🏛️ Saldi</a>
-  </div>
-</div>
-
-<!-- PANE: REGOLAMENTO (SOLO TABELLA) -->
-<div id="pane-reg" class="space-y-6 hidden">
-  <section class="p-4 rounded-2xl bg-neutral-800">
-    <h2 class="text-xl font-semibold mb-3">
-      Regolamento Crocette 2025/2026
-      <a href="/static/Calendario_Paste_2025_2026.pdf" class="ml-3 text-sm underline opacity-80">
-        Calendario Paste (PDF)
-      </a>
-    </h2>
-    <p class="text-sm opacity-80 mb-2">Valore crocetta: <b>€2.00</b></p>
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead class="text-neutral-400">
-          <tr>
-            <th class="text-left p-2">Descrizione</th>
-            <th class="text-left p-2">Crocette</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in rules %}
-          <tr class="border-t border-neutral-700">
-            <td class="p-2">
-              {{ r.title }}
-              {% if r.description %}<span class="opacity-70">— {{ r.description }}</span>{% endif %}
-            </td>
-            <td class="p-2">
-              {% if r.crocette %}{{ r.crocette }} ❌{% else %}—{% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </section>
-</div>
-
-<!-- PANE: SALDI -->
-<div id="pane-saldi" class="space-y-6">
-  <!-- KPI -->
-  <section class="p-4 rounded-2xl bg-neutral-800">
-    <h2 class="text-xl font-semibold mb-4">Conteggi generali</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="p-3 rounded-xl bg-neutral-900">
-        <div class="text-xs opacity-70">Crocette prese (totale)</div>
-        <div class="text-2xl font-bold">{{ totals.crocette_prese_total }}</div>
-      </div>
-      <div class="p-3 rounded-xl bg-neutral-900">
-        <div class="text-xs opacity-70">Crocette pagate</div>
-        <div class="text-2xl font-bold">{{ totals.crocette_pagate }}</div>
-      </div>
-      <div class="p-3 rounded-xl bg-neutral-900">
-        <div class="text-xs opacity-70">Crocette da pagare</div>
-        <div class="text-2xl font-bold">{{ totals.crocette_da_pagare }}</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Ultimo saldo -->
-  <section class="p-4 rounded-2xl bg-neutral-800">
-    <h2 class="text-sm font-semibold opacity-70 mb-2">ULTIMO SALDO</h2>
-    {% if latest_movement %}
-    <div class="border-l-4 border-team pl-3">
-      <div class="text-sm opacity-80">
-        {{ latest_movement.created_at.strftime('%d/%m/%Y') }} — <b>{{ latest_movement.member.name }}</b>
-      </div>
-      <div class="mt-2 text-sm">
-        {% if latest_movement.crocette %}{{ latest_movement.crocette }} crocette{% endif %}
-        {% if latest_movement.rule %}<span class="opacity-70"> ({{ latest_movement.rule.title }})</span>{% endif %}
-        {% if latest_movement.note %} — {{ latest_movement.note }}{% endif %}
-      </div>
-    </div>
-    {% else %}
-    <div class="opacity-70 text-sm">Nessun movimento ancora presente.</div>
-    {% endif %}
-  </section>
-
-  <!-- Ordina / Filtra -->
-  <section class="p-4 rounded-2xl bg-neutral-800">
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-      <div class="flex items-center gap-2">
-        <label class="text-sm opacity-70">Ordina per</label>
-        <select id="sort" class="px-3 py-2 rounded bg-neutral-900">
-          <option value="crocette_due-desc" selected>Crocette da pagare (↓)</option>
-          <option value="crocette_prese-desc">Crocette prese (↓)</option>
-          <option value="crocette_prese-asc">Crocette prese (↑)</option>
-          <option value="crocette_pay-desc">Crocette pagate (↓)</option>
-          <option value="crocette_pay-asc">Crocette pagate (↑)</option>
-          <option value="name-asc">Nome (A–Z)</option>
-          <option value="name-desc">Nome (Z–A)</option>
-          <option value="last-desc">Data Recente</option>
-          <option value="last-asc">Data Meno Recente</option>
-        </select>
-      </div>
-      <div class="flex items-center gap-2">
-        <label class="text-sm opacity-70">Filtra per nome</label>
-        <input id="filterName" placeholder="Cerca nome..." class="px-3 py-2 rounded bg-neutral-900" />
-      </div>
-    </div>
-  </section>
-
-  <!-- Elenco nomi -->
-  <section class="p-4 rounded-2xl bg-neutral-800">
-    <h2 class="text-xl font-semibold mb-3">Elenco Nomi</h2>
-    <div id="members" class="flex flex-col gap-3">
-      {% for r in rows %}
-      <div class="p-3 rounded-xl bg-neutral-900 member" data-name="{{ r.name | lower }}"
-        data-cpre="{{ r.crocette_prese }}" data-cpay="{{ r.crocette_pagate }}" data-cdue="{{ r.crocette_da_pagare }}"
-        data-last="{{ r.last.isoformat() if r.last else '' }}">
-        <div class="font-semibold text-lg">{{ r.name }}</div>
-        <div class="text-sm opacity-80">Ultimo saldo: {{ r.last.strftime('%d/%m/%Y %H:%M') if r.last else '—' }}</div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2 text-sm">
-          <div class="p-2 rounded bg-neutral-800">Crocette prese <div class="text-xl font-bold">{{ r.crocette_prese }}
-            </div>
-          </div>
-          <div class="p-2 rounded bg-neutral-800">Crocette pagate <div class="text-xl font-bold">{{ r.crocette_pagate }}
-            </div>
-          </div>
-          <div class="p-2 rounded bg-neutral-800">Crocette da pagare <div class="text-xl font-bold">{{
-              r.crocette_da_pagare }}</div>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </section>
-
-  <!-- Questo mese -->
-  <section class="p-4 rounded-2xl bg-neutral-800">
-    <div class="flex items-center justify-between">
-      <h2 class="text-xl font-semibold mb-3">Questo Mese</h2>
-      <a href="/storico?kind=debit" class="text-sm underline opacity-80 hover:text-team">Vedi tutte le crocette prese
-        →</a>
-    </div>
-    <ul class="space-y-2 text-sm max-h-80 overflow-auto">
-      {% for m in last_month %}
-      <li class="p-2 rounded bg-neutral-900 flex justify-between">
-        <span>
-          <b>{{ m.member.name }}</b> — {{ 'debito' if m.kind == 'debit' else 'credito' }}
-          {% if m.crocette %}{{ m.crocette }} ❌{% endif %}
-          {% if m.rule %}<span class="opacity-70">({{ m.rule.title }})</span>{% endif %}
-          {% if m.note %} — {{ m.note }}{% endif %}
-        </span>
-        <span class="opacity-70">{{ m.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
-      </li>
-      {% else %}
-      <li class="opacity-70">Nessun movimento nel mese corrente</li>
-      {% endfor %}
+<h2 class="text-xl font-semibold mb-3">Pannello Admin</h2>
+<div class="grid md:grid-cols-2 gap-6">
+  <section class="p-4 bg-neutral-800 rounded-2xl">
+    <h3 class="font-semibold mb-2">Membri</h3>
+    <form action="/admin/member" method="post" class="flex gap-2">
+      <input name="name" class="px-3 py-2 rounded bg-neutral-900" placeholder="Nuovo membro" required />
+      <button class="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-500">Aggiungi</button>
+    </form>
+    <ul class="mt-3 text-sm opacity-80">
+      {% for m in members %}<li>{{ m.name }}</li>{% endfor %}
     </ul>
   </section>
-
-  <!-- CALENDARIO: prossime paste + prossima partita (come richiesto) -->
-  <section class="grid md:grid-cols-2 gap-6">
-    <div class="p-4 rounded-2xl bg-neutral-800">
-      <h2 class="text-xl font-semibold mb-3">Prossime paste (🍕)</h2>
-      <ul class="space-y-2 text-sm">
-        {% if upcoming_pastes %}
-        {% for e in upcoming_pastes %}
-        <li class="p-2 rounded bg-neutral-900">
-          <b>{{ e.date.strftime('%d/%m/%Y') }}</b> — {{ e.emoji }} {{ e.who }}
-        </li>
-        {% endfor %}
-        {% else %}
-        <li class="opacity-70">Nessuna pasta prevista.</li>
-        {% endif %}
-      </ul>
-    </div>
-
-    <div class="p-4 rounded-2xl bg-neutral-800">
-      <h2 class="text-xl font-semibold mb-3">Prossima partita</h2>
-      {% if next_match %}
-      <div class="p-3 rounded-xl bg-neutral-900">
-        <div class="text-sm opacity-70">{{ next_match.emoji == '🏠' and 'In casa (Scanzo)' or 'Trasferta' }}</div>
-        <div class="text-lg font-semibold">{{ next_match.date.strftime('%d/%m/%Y') }}</div>
-        <div class="text-sm mt-1">{{ next_match.who }}</div>
-      </div>
-      {% else %}
-      <div class="opacity-70 text-sm">Nessuna partita in calendario.</div>
-      {% endif %}
-    </div>
+  <section class="p-4 bg-neutral-800 rounded-2xl">
+    <h3 class="font-semibold mb-2">Regole</h3>
+    <form action="/admin/rule" method="post" class="grid grid-cols-2 gap-2">
+      <input name="title" class="px-3 py-2 rounded bg-neutral-900 col-span-2" placeholder="Titolo" required />
+      <input name="description" class="px-3 py-2 rounded bg-neutral-900 col-span-2" placeholder="Descrizione" />
+      <input name="crocette" type="number" value="0" class="px-3 py-2 rounded bg-neutral-900" />
+      <input name="casse" type="number" value="0" class="px-3 py-2 rounded bg-neutral-900" />
+      <button class="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-500 col-span-2">Aggiungi</button>
+    </form>
+    <ul class="mt-3 text-sm opacity-80">
+      {% for r in rules %}<li>{{ r.title }} — {{ r.crocette }} ❌ {% if r.casse %}/ {{ r.casse }} casse{% endif %}</li>{%
+      endfor %}
+    </ul>
   </section>
-
-  <!-- Punteggio Bagherone -->
-  <section class="p-4 rounded-2xl bg-neutral-800">
-    <h2 class="text-xl font-semibold mb-4">Punteggio Bagherone</h2>
-    <div class="grid grid-cols-2 gap-4">
-      <div class="p-4 rounded-xl bg-neutral-900 text-center">
-        <div class="text-sm opacity-70">Giovani</div>
-        <div class="text-3xl font-extrabold">{{ bagherone.giovani }}</div>
+  <section class="p-4 rounded-2xl bg-neutral-800 mb-4">
+    <h2 class="text-lg font-semibold mb-3">Punteggio Bagherone</h2>
+    {% if request.query_params.get('bagherone') == 'ok' %}
+    <div class="mb-2 text-green-400">✅ Punteggio aggiornato</div>
+    {% endif %}
+    <form method="post" action="/admin/bagherone" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+      <div>
+        <label class="block text-sm opacity-80 mb-1">Giovani</label>
+        <input name="giovani" type="number" min="0" value="{{ bagherone.giovani if bagherone else 0 }}"
+          class="w-full px-3 py-2 rounded bg-neutral-900" required />
       </div>
-      <div class="p-4 rounded-xl bg-neutral-900 text-center">
-        <div class="text-sm opacity-70">Vecchi</div>
-        <div class="text-3xl font-extrabold">{{ bagherone.vecchi }}</div>
+      <div>
+        <label class="block text-sm opacity-80 mb-1">Vecchi</label>
+        <input name="vecchi" type="number" min="0" value="{{ bagherone.vecchi if bagherone else 0 }}"
+          class="w-full px-3 py-2 rounded bg-neutral-900" required />
       </div>
-    </div>
-    <p class="text-xs opacity-60 mt-2">
-      Ultimo aggiornamento: {{ bagherone.updated_at.strftime('%d/%m/%Y %H:%M') if bagherone.updated_at else '—' }}
-    </p>
-  </section>
-
-
-  <!-- Editor calendario (solo admin) -->
-  {% if user and user.role == 'admin' %}
-  <section class="p-4 rounded-2xl bg-neutral-800">
-    <h2 class="text-xl font-semibold mb-3">Calendario (testo modificabile)</h2>
-    <form method="post" action="/calendar" class="space-y-3">
-      <textarea name="text" rows="10" class="w-full p-3 rounded bg-neutral-900 font-mono text-sm"
-        spellcheck="false">{{ calendar_text }}</textarea>
-      <p class="text-xs opacity-70">
-        Formato consigliato: <code>YYYY-MM-DD 🍕 Nome</code> | <code>YYYY-MM-DD 🏠 Avversario</code> |
-        <code>YYYY-MM-DD ✈️ Avversario</code> | <code>YYYY-MM-DD 🎂 Nome</code>
-      </p>
-      <button class="px-4 py-2 rounded-lg border border-neutral-700 hover:ring-team">Salva calendario</button>
-      <a href="/calendar.txt" class="text-sm underline opacity-80 ml-2" target="_blank">Scarica come .txt</a>
+      <div>
+        <button class="w-full px-4 py-2 rounded-lg border border-neutral-700 hover:border-team">Salva</button>
+      </div>
     </form>
   </section>
-  {% endif %}
+
 </div>
-
-<!-- Script tab inline -->
-<script>
-  (function () {
-    const regBtn = document.getElementById('tab-reg');
-    const salBtn = document.getElementById('tab-saldi');
-    const reg = document.getElementById('pane-reg');
-    const sal = document.getElementById('pane-saldi');
-
-    function setActive(btn, on) {
-      if (!btn) return;
-      btn.setAttribute('aria-selected', on ? 'true' : 'false');
-    }
-    function show(which) {
-      const isReg = which === 'reg';
-      reg?.classList.toggle('hidden', !isReg);
-      sal?.classList.toggle('hidden', isReg);
-      setActive(regBtn, isReg);
-      setActive(salBtn, !isReg);
-      try { localStorage.setItem('activeTab', which); } catch { }
-      if (location.hash !== '#' + which) history.replaceState(null, '', '#' + which);
-    }
-    const initial = (location.hash || '').replace('#', '') || (localStorage.getItem('activeTab') || 'saldi');
-    show(initial === 'reg' ? 'reg' : 'saldi');
-    regBtn?.addEventListener('click', (e) => { e.preventDefault(); show('reg'); });
-    salBtn?.addEventListener('click', (e) => { e.preventDefault(); show('saldi'); });
-    window.addEventListener('hashchange', () => {
-      const h = (location.hash || '').replace('#', '');
-      show(h === 'reg' ? 'reg' : 'saldi');
-    });
-  })();
-</script>
 {% endblock %}
