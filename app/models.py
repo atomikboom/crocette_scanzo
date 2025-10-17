@@ -1,6 +1,7 @@
 from __future__ import annotations
-from sqlalchemy import Integer, String, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import Integer, String, Boolean, DateTime, ForeignKey, Text, func, Column
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
 from datetime import datetime
 from .database import Base
 
@@ -42,3 +43,11 @@ class Movement(Base):
 
     member: Mapped[Member] = relationship(back_populates="movements")
     rule: Mapped[Rule | None] = relationship()
+
+
+class BagheroneScore(Base):
+    __tablename__ = "bagherone_score"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    giovani = Column(Integer, nullable=False, default=0)
+    vecchi = Column(Integer, nullable=False, default=0)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
