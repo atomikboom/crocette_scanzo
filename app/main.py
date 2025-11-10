@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, Request, Response, status, Form
+from fastapi import FastAPI, Depends, Request, Response, status, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -12,6 +12,12 @@ from .auth import create_access_token, verify_password, get_current_user
 
 from jose import jwt, JWTError
 from .auth import SECRET_KEY, ALGORITHM
+
+# se hai lo script di seed in root, lascia pure così:
+try:
+    from seed_rules_2025_26 import main as seed_rules_main
+except Exception:
+    seed_rules_main = None  # non bloccare l'app se manca nel container
 
 # ------------ CONFIG PATHS ------------
 APP_DIR = os.path.dirname(__file__)
@@ -35,12 +41,6 @@ MONTHS_IT = {
 EMOJIS = {"paste":"🍕", "home":"🏠", "away":"✈️", "birthday":"🎂"}
 EMOJI_SET = set(EMOJIS.values())
 
-from datetime import timezone
-
-def now_utc():
-    return datetime.now(timezone.utc)
-
-
 def get_optional_user(request: Request, db: Session):
     token = request.cookies.get("access_token")
     if not token:
@@ -55,10 +55,8 @@ def get_optional_user(request: Request, db: Session):
     return db.query(User).filter(User.username == username, User.is_active == True).first()
 
 def aggregate(db: Session):
-    # Solo crocette
-    debits  = db.query(Movement).filter(Movement.kind == "debit",  Movement.deleted_at.is_(None)).all()
-    credits = db.query(Movement).filter(Movement.kind == "credit", Movement.deleted_at.is_(None)).all()
-
+    debits = db.query(Movement).filter(Movement.kind == "debit").all()
+    credits = db.query(Movement).filter(Movement.kind == "credit").all()
     deb_croc = sum(m.crocette for m in debits)
     cre_croc = sum(m.crocette for m in credits)
     return {
@@ -135,6 +133,7 @@ def save_calendar_text(text: str):
     with open(CAL_TXT, "w", encoding="utf-8") as f:
         f.write(text or "")
 
+# --------- BAGHERONE helper ----------
 def get_or_create_bagherone(db: Session) -> BagheroneScore:
     row = db.query(BagheroneScore).first()
     if not row:
@@ -144,20 +143,16 @@ def get_or_create_bagherone(db: Session) -> BagheroneScore:
         db.refresh(row)
     return row
 
-
 # ------------ ROUTES ------------
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request, db: Session = Depends(get_db)):
     rules = db.query(Rule).filter(Rule.active == True).all()
     members = db.query(Member).all()
-    bagherone = get_or_create_bagherone(db)
 
     rows = []
     for m in members:
-        deb_croc = sum(x.crocette for x in m.movements if x.kind == "debit" and x.deleted_at is None)
-        cre_croc = sum(x.crocette for x in m.movements if x.kind == "credit" and x.deleted_at is None)
-        last_dt  = max([x.created_at for x in m.movements if x.deleted_at is None], default=None)
-
+        deb_croc = sum(x.crocette for x in m.movements if x.kind == "debit")
+        cre_croc = sum(x.crocette for x in m.movements if x.kind == "credit")
         rows.append({
             "id": m.id,
             "name": m.name,
@@ -172,18 +167,12 @@ async def index(request: Request, db: Session = Depends(get_db)):
     month_start = datetime(now.year, now.month, 1)
     last_month = (
         db.query(Movement)
-          .filter(Movement.deleted_at.is_(None))
-          .filter(Movement.created_at >= month_start)
-          .order_by(Movement.created_at.desc())
-          .limit(50)
-          .all()
+        .filter(Movement.created_at >= month_start)
+        .order_by(Movement.created_at.desc())
+        .limit(50)
+        .all()
     )
-    latest_movement = (
-        db.query(Movement)
-          .filter(Movement.deleted_at.is_(None))
-          .order_by(Movement.created_at.desc())
-          .first()
-    )
+    latest_movement = db.query(Movement).order_by(Movement.created_at.desc()).first()
     user = get_optional_user(request, db)
 
     cal_text = load_calendar_text()
@@ -191,6 +180,8 @@ async def index(request: Request, db: Session = Depends(get_db)):
     upcoming_pastes = [e for e in events if e["type"] == "paste" and e["date"] >= now][:5]
     matches = [e for e in events if e["type"] in ("home", "away") and e["date"] >= now]
     next_match = matches[0] if matches else None
+
+    bagherone = get_or_create_bagherone(db)
 
     return templates.TemplateResponse("index.html", {
         "request": request,
@@ -203,9 +194,20 @@ async def index(request: Request, db: Session = Depends(get_db)):
         "calendar_text": cal_text,
         "upcoming_pastes": upcoming_pastes,
         "next_match": next_match,
-        "bagherone" : bagherone,
+        "bagherone": bagherone,
     })
 
+# ---- reseed (se presente) ----
+@app.post("/admin/reseed")
+async def admin_reseed(user: User = Depends(get_current_user)):
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Solo admin")
+    if not seed_rules_main:
+        raise HTTPException(status_code=500, detail="seed_rules_2025_26.py non disponibile nel container")
+    seed_rules_main()
+    return RedirectResponse("/?reseed=ok", status_code=303)
+
+# ---- storico ----
 @app.get("/storico", response_class=HTMLResponse)
 async def storico(request: Request,
                   kind: str = "debit",
@@ -214,7 +216,7 @@ async def storico(request: Request,
     user = get_optional_user(request, db)
     members = db.query(Member).order_by(Member.name).all()
 
-    q = db.query(Movement).filter(Movement.deleted_at.is_(None)).order_by(Movement.created_at.desc())
+    q = db.query(Movement).order_by(Movement.created_at.desc())
     kind = kind.lower().strip()
     if kind in ("debit", "credit"):
         q = q.filter(Movement.kind == kind)
@@ -234,6 +236,7 @@ async def storico(request: Request,
         "user": user,
     })
 
+# ---- calendario ----
 @app.post("/calendar")
 async def save_calendar(request: Request, user: User = Depends(get_current_user), text: str = Form(...)):
     if user.role != "admin":
@@ -246,7 +249,7 @@ async def calendar_txt():
     txt = load_calendar_text()
     return PlainTextResponse(txt or "", media_type="text/plain; charset=utf-8")
 
-# -- login/logout/movements/admin invariati --
+# ---- login/logout/movements ----
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request, db: Session = Depends(get_db)):
     user = get_optional_user(request, db)
@@ -262,12 +265,10 @@ async def login(response: Response,
     if not user or not verify_password(password, user.password_hash):
         return RedirectResponse("/login?err=1", status_code=status.HTTP_302_FOUND)
     token = create_access_token({"sub": user.username})
-    # sicurezza: consenti solo path interni
     target = next if (next and next.startswith("/")) else "/"
     resp = RedirectResponse(url=target, status_code=status.HTTP_302_FOUND)
     resp.set_cookie("access_token", token, httponly=True, max_age=60*60*12, samesite="lax")
     return resp
-
 
 @app.post("/logout")
 async def logout(response: Response):
@@ -284,31 +285,6 @@ async def movements_page(request: Request, db: Session = Depends(get_db)):
     rules = db.query(Rule).filter(Rule.active == True).order_by(Rule.title).all()
     return templates.TemplateResponse("movements.html", {"request": request, "members": members, "rules": rules, "user": user})
 
-from fastapi import HTTPException
-
-@app.post("/movements/delete")
-async def delete_movement(
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-    movement_id: int = Form(...),
-    next: str | None = Form(None),
-):
-    # Autorizzazione: solo admin (oppure consenti anche all'autore, se vuoi)
-    if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Solo admin può eliminare")
-
-    mv = db.query(Movement).filter(Movement.id == movement_id).first()
-    if not mv:
-        raise HTTPException(status_code=404, detail="Movimento non trovato")
-
-    # soft delete
-    mv.deleted_at = now_utc()
-    db.commit()
-
-    target = next if (next and next.startswith("/")) else "/storico"
-    return RedirectResponse(target, status_code=303)
-
-
 @app.post("/movements/new")
 async def new_movement(request: Request, user: User = Depends(get_current_user), db: Session = Depends(get_db),
                       member_id: int = Form(...), kind: str = Form(...), rule_id: int | None = Form(None),
@@ -319,6 +295,27 @@ async def new_movement(request: Request, user: User = Depends(get_current_user),
     db.commit()
     return RedirectResponse("/movements?ok=1", status_code=status.HTTP_302_FOUND)
 
+# ====== HARD DELETE (elimina definitivamente) ======
+@app.post("/movements/delete")
+async def delete_movement(user: User = Depends(get_current_user),
+                          db: Session = Depends(get_db),
+                          movement_id: int = Form(...),
+                          next: str | None = Form(None)):
+    # solo admin, oppure scommenta la riga sotto per consentirlo anche all'autore:
+    # if not (user.role == "admin" or db.query(Movement).get(movement_id).user_id == user.id):
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Solo admin può eliminare")
+
+    mv = db.query(Movement).filter(Movement.id == movement_id).first()
+    if not mv:
+        raise HTTPException(status_code=404, detail="Movimento non trovato")
+
+    db.delete(mv)
+    db.commit()
+    target = next if (next and next.startswith("/")) else "/storico"
+    return RedirectResponse(target, status_code=303)
+
+# ---- admin page ----
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_page(request: Request, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if user.role != "admin":
@@ -347,16 +344,3 @@ async def add_rule(user: User = Depends(get_current_user), db: Session = Depends
     db.add(Rule(title=title, description=description, crocette=crocette, casse=0))
     db.commit()
     return RedirectResponse("/admin?rule=ok", status_code=302)
-
-@app.post("/admin/bagherone")
-async def update_bagherone(user: User = Depends(get_current_user),
-                           db: Session = Depends(get_db),
-                           giovani: int = Form(...),
-                           vecchi: int = Form(...)):
-    if user.role != "admin":
-        return RedirectResponse("/", status_code=302)
-    row = get_or_create_bagherone(db)
-    row.giovani = max(0, int(giovani))
-    row.vecchi = max(0, int(vecchi))
-    db.commit()
-    return RedirectResponse("/admin?bagherone=ok", status_code=302)
