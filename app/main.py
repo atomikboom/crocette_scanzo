@@ -56,8 +56,9 @@ def get_optional_user(request: Request, db: Session):
 
 def aggregate(db: Session):
     # Solo crocette
-    debits = db.query(Movement).filter(Movement.kind == "debit").all()
-    credits = db.query(Movement).filter(Movement.kind == "credit").all()
+    debits  = db.query(Movement).filter(Movement.kind == "debit",  Movement.deleted_at.is_(None)).all()
+    credits = db.query(Movement).filter(Movement.kind == "credit", Movement.deleted_at.is_(None)).all()
+
     deb_croc = sum(m.crocette for m in debits)
     cre_croc = sum(m.crocette for m in credits)
     return {
@@ -153,8 +154,10 @@ async def index(request: Request, db: Session = Depends(get_db)):
 
     rows = []
     for m in members:
-        deb_croc = sum(x.crocette for x in m.movements if x.kind == "debit")
-        cre_croc = sum(x.crocette for x in m.movements if x.kind == "credit")
+        deb_croc = sum(x.crocette for x in m.movements if x.kind == "debit" and x.deleted_at is None)
+        cre_croc = sum(x.crocette for x in m.movements if x.kind == "credit" and x.deleted_at is None)
+        last_dt  = max([x.created_at for x in m.movements if x.deleted_at is None], default=None)
+
         rows.append({
             "id": m.id,
             "name": m.name,
@@ -169,12 +172,18 @@ async def index(request: Request, db: Session = Depends(get_db)):
     month_start = datetime(now.year, now.month, 1)
     last_month = (
         db.query(Movement)
-        .filter(Movement.created_at >= month_start)
-        .order_by(Movement.created_at.desc())
-        .limit(50)
-        .all()
+          .filter(Movement.deleted_at.is_(None))
+          .filter(Movement.created_at >= month_start)
+          .order_by(Movement.created_at.desc())
+          .limit(50)
+          .all()
     )
-    latest_movement = db.query(Movement).order_by(Movement.created_at.desc()).first()
+    latest_movement = (
+        db.query(Movement)
+          .filter(Movement.deleted_at.is_(None))
+          .order_by(Movement.created_at.desc())
+          .first()
+    )
     user = get_optional_user(request, db)
 
     cal_text = load_calendar_text()
@@ -205,7 +214,7 @@ async def storico(request: Request,
     user = get_optional_user(request, db)
     members = db.query(Member).order_by(Member.name).all()
 
-    q = db.query(Movement).order_by(Movement.created_at.desc())
+    q = db.query(Movement).filter(Movement.deleted_at.is_(None)).order_by(Movement.created_at.desc())
     kind = kind.lower().strip()
     if kind in ("debit", "credit"):
         q = q.filter(Movement.kind == kind)
@@ -274,6 +283,30 @@ async def movements_page(request: Request, db: Session = Depends(get_db)):
     members = db.query(Member).order_by(Member.name).all()
     rules = db.query(Rule).filter(Rule.active == True).order_by(Rule.title).all()
     return templates.TemplateResponse("movements.html", {"request": request, "members": members, "rules": rules, "user": user})
+
+from fastapi import HTTPException
+
+@app.post("/movements/delete")
+async def delete_movement(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    movement_id: int = Form(...),
+    next: str | None = Form(None),
+):
+    # Autorizzazione: solo admin (oppure consenti anche all'autore, se vuoi)
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Solo admin può eliminare")
+
+    mv = db.query(Movement).filter(Movement.id == movement_id).first()
+    if not mv:
+        raise HTTPException(status_code=404, detail="Movimento non trovato")
+
+    # soft delete
+    mv.deleted_at = now_utc()
+    db.commit()
+
+    target = next if (next and next.startswith("/")) else "/storico"
+    return RedirectResponse(target, status_code=303)
 
 
 @app.post("/movements/new")
