@@ -1,98 +1,62 @@
 {% extends "base.html" %}
+{% block title %}Storico — Crocette{% endblock %}
+
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6">
-  <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold">Storico movimenti</h1>
-    <a href="/" class="text-sm underline opacity-80">← Torna alla dashboard</a>
+<h1 class="text-2xl font-bold mb-4">Storico</h1>
+
+<form method="get" action="/storico" class="flex flex-wrap gap-3 items-end mb-4">
+  <div>
+    <label class="block text-sm opacity-80 mb-1">Tipo</label>
+    <select name="kind" class="px-3 py-2 rounded bg-neutral-900">
+      <option value="" {{ '' == kind and 'selected' or '' }}>Tutti</option>
+      <option value="debit" {{ 'debit' == kind and 'selected' or '' }}>Debiti</option>
+      <option value="credit" {{ 'credit' == kind and 'selected' or '' }}>Crediti</option>
+    </select>
   </div>
-
-  <!-- Filtri -->
-  <form method="get" action="/storico" class="p-4 rounded-2xl bg-neutral-800 grid md:grid-cols-4 gap-3 items-end">
-    <div>
-      <label class="block text-sm opacity-80 mb-1">Tipo</label>
-      <select name="kind" class="w-full px-3 py-2 rounded bg-neutral-900">
-        <option value="debit"  {% if kind=='debit' %}selected{% endif %}>Solo debito</option>
-        <option value="credit" {% if kind=='credit' %}selected{% endif %}>Solo credito</option>
-        <option value="all"    {% if kind not in ['debit','credit'] %}selected{% endif %}>Entrambi</option>
-      </select>
-    </div>
-    <div class="md:col-span-2">
-      <label class="block text-sm opacity-80 mb-1">Giocatore</label>
-      <select name="member_id" class="w-full px-3 py-2 rounded bg-neutral-900">
-        <option value="">— Tutti —</option>
-        {% for m in members %}
-        <option value="{{ m.id }}" {% if member_id and m.id == member_id %}selected{% endif %}>{{ m.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div>
-      <button class="w-full px-4 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-700">Applica</button>
-    </div>
-  </form>
-
-  <!-- Totale -->
-  <div class="p-3 rounded-xl bg-neutral-800">
-    <span class="text-sm opacity-70">Movimenti trovati:</span>
-    <b>{{ moves|length }}</b>
-    <span class="ml-4 text-sm opacity-70">Somma crocette:</span>
-    <b>{{ total }}</b>
+  <div>
+    <label class="block text-sm opacity-80 mb-1">Giocatore</label>
+    <select name="member_id" class="px-3 py-2 rounded bg-neutral-900">
+      <option value="">Tutti</option>
+      {% for m in members %}
+      <option value="{{ m.id }}" {{ member_id == m.id and 'selected' or '' }}>{{ m.name }}</option>
+      {% endfor %}
+    </select>
   </div>
+  <button class="px-4 py-2 rounded-lg border border-neutral-700 hover:border-team">Filtra</button>
+</form>
 
-  <!-- Tabella -->
-  <div class="overflow-x-auto rounded-2xl bg-neutral-800">
-    <table class="w-full text-sm">
-      <thead class="text-neutral-400">
-        <tr>
-          <th class="text-left p-2">Data</th>
-          <th class="text-left p-2">Giocatore</th>
-          <th class="text-left p-2">Tipo</th>
-          <th class="text-left p-2">Crocette</th>
-          <th class="text-left p-2">Regola</th>
-          <th class="text-left p-2">Nota</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for m in moves %}
-        <tr class="border-t border-neutral-700">
-          <td class="p-2 whitespace-nowrap">{{ m.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
-          <td class="p-2">{{ m.member.name }}</td>
-          <td class="p-2">{{ 'debito' if m.kind == 'debit' else 'credito' }}</td>
-          <td class="p-2">{{ m.crocette }}</td>
-          <td class="p-2">{% if m.rule %}{{ m.rule.title }}{% else %}—{% endif %}</td>
-          <td class="p-2">{% if m.note %}{{ m.note }}{% else %}—{% endif %}</td>
-        </tr>
-        <li class="p-2 rounded bg-neutral-900 flex justify-between items-center">
-  <span>
-    <b>{{ m.member.name }}</b> — {{ 'debito' if m.kind == 'debit' else 'credito' }}
-    {% if m.crocette %}{{ m.crocette }} ❌{% endif %}
-    {% if m.rule %}<span class="opacity-70">({{ m.rule.title }})</span>{% endif %}
-    {% if m.note %} — {{ m.note }}{% endif %}
-  </span>
-
-  <span class="flex items-center gap-2">
-    <span class="opacity-70 text-sm">{{ m.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
-
-    {% if user and user.role == 'admin' %}
-    <form method="post" action="/movements/delete"
-          onsubmit="return confirm('Eliminare definitivamente questo movimento?');">
-      <input type="hidden" name="movement_id" value="{{ m.id }}">
-      <!-- ritorna alla stessa pagina con gli stessi filtri -->
-      <input type="hidden" name="next"
-             value="/storico?kind={{ kind }}{% if member_id %}&member_id={{ member_id }}{% endif %}">
-      <button class="px-2 py-1 rounded border border-neutral-700 text-xs hover:border-team" title="Elimina">
-        🗑️ Elimina
-      </button>
-    </form>
-    {% endif %}
-  </span>
-</li>
-
-        {% endfor %}
-        {% if moves|length == 0 %}
-        <tr><td class="p-3 opacity-60" colspan="6">Nessun movimento.</td></tr>
-        {% endif %}
-      </tbody>
-    </table>
-  </div>
+<div class="mb-3 text-sm opacity-80">
+  Totale crocette in elenco: <b>{{ total }}</b>
 </div>
+
+<ul class="space-y-2">
+  {% for m in moves %}
+  <li class="p-2 rounded bg-neutral-900 flex justify-between items-center">
+    <span>
+      <b>{{ m.member.name }}</b> — {{ 'debito' if m.kind == 'debit' else 'credito' }}
+      {% if m.crocette %}{{ m.crocette }} ❌{% endif %}
+      {% if m.rule %}<span class="opacity-70">({{ m.rule.title }})</span>{% endif %}
+      {% if m.note %} — {{ m.note }}{% endif %}
+    </span>
+
+    <span class="flex items-center gap-2">
+      <span class="opacity-70 text-sm">{{ m.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+
+      {% if user and user.role == 'admin' %}
+      <form method="post" action="/movements/delete"
+            onsubmit="return confirm('Eliminare definitivamente questo movimento?');">
+        <input type="hidden" name="movement_id" value="{{ m.id }}">
+        <input type="hidden" name="next"
+               value="/storico?kind={{ kind }}{% if member_id %}&member_id={{ member_id }}{% endif %}">
+        <button class="px-2 py-1 rounded border border-neutral-700 text-xs hover:border-team" title="Elimina">
+          🗑️ Elimina
+        </button>
+      </form>
+      {% endif %}
+    </span>
+  </li>
+  {% else %}
+  <li class="opacity-70">Nessun movimento trovato.</li>
+  {% endfor %}
+</ul>
 {% endblock %}
