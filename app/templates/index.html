@@ -142,19 +142,30 @@
   <section class="p-4 rounded-2xl bg-neutral-800">
     <div class="flex items-center justify-between">
       <h2 class="text-xl font-semibold mb-3">Questo Mese</h2>
-      <a href="/storico?kind=debit" class="text-sm underline opacity-80 hover:text-team">Vedi tutte le crocette prese
-        →</a>
+      <a href="/storico?kind=debit" class="text-sm underline opacity-80 hover:text-team">Vedi tutte le crocette prese →</a>
     </div>
     <ul class="space-y-2 text-sm max-h-80 overflow-auto">
       {% for m in last_month %}
-      <li class="p-2 rounded bg-neutral-900 flex justify-between">
+      <li class="p-2 rounded bg-neutral-900 flex justify-between items-center">
         <span>
           <b>{{ m.member.name }}</b> — {{ 'debito' if m.kind == 'debit' else 'credito' }}
           {% if m.crocette %}{{ m.crocette }} ❌{% endif %}
           {% if m.rule %}<span class="opacity-70">({{ m.rule.title }})</span>{% endif %}
           {% if m.note %} — {{ m.note }}{% endif %}
         </span>
-        <span class="opacity-70">{{ m.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+        <span class="flex items-center gap-2">
+          <span class="opacity-70">{{ m.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+          {% if user and user.role == 'admin' %}
+          <form method="post" action="/movements/delete"
+                onsubmit="return confirm('Eliminare definitivamente questo movimento?');">
+            <input type="hidden" name="movement_id" value="{{ m.id }}">
+            <input type="hidden" name="next" value="/#saldi">
+            <button class="px-2 py-1 rounded border border-neutral-700 text-xs hover:border-team" title="Elimina">
+              🗑️
+            </button>
+          </form>
+          {% endif %}
+        </span>
       </li>
       {% else %}
       <li class="opacity-70">Nessun movimento nel mese corrente</li>
