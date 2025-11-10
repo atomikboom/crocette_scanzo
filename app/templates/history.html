@@ -61,6 +61,32 @@
           <td class="p-2">{% if m.rule %}{{ m.rule.title }}{% else %}—{% endif %}</td>
           <td class="p-2">{% if m.note %}{{ m.note }}{% else %}—{% endif %}</td>
         </tr>
+        <li class="p-2 rounded bg-neutral-900 flex justify-between items-center">
+  <span>
+    <b>{{ m.member.name }}</b> — {{ 'debito' if m.kind == 'debit' else 'credito' }}
+    {% if m.crocette %}{{ m.crocette }} ❌{% endif %}
+    {% if m.rule %}<span class="opacity-70">({{ m.rule.title }})</span>{% endif %}
+    {% if m.note %} — {{ m.note }}{% endif %}
+  </span>
+
+  <span class="flex items-center gap-2">
+    <span class="opacity-70 text-sm">{{ m.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+
+    {% if user and user.role == 'admin' %}
+    <form method="post" action="/movements/delete"
+          onsubmit="return confirm('Eliminare definitivamente questo movimento?');">
+      <input type="hidden" name="movement_id" value="{{ m.id }}">
+      <!-- ritorna alla stessa pagina con gli stessi filtri -->
+      <input type="hidden" name="next"
+             value="/storico?kind={{ kind }}{% if member_id %}&member_id={{ member_id }}{% endif %}">
+      <button class="px-2 py-1 rounded border border-neutral-700 text-xs hover:border-team" title="Elimina">
+        🗑️ Elimina
+      </button>
+    </form>
+    {% endif %}
+  </span>
+</li>
+
         {% endfor %}
         {% if moves|length == 0 %}
         <tr><td class="p-3 opacity-60" colspan="6">Nessun movimento.</td></tr>
