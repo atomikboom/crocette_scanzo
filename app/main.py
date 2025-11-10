@@ -35,6 +35,12 @@ MONTHS_IT = {
 EMOJIS = {"paste":"🍕", "home":"🏠", "away":"✈️", "birthday":"🎂"}
 EMOJI_SET = set(EMOJIS.values())
 
+from datetime import timezone
+
+def now_utc():
+    return datetime.now(timezone.utc)
+
+
 def get_optional_user(request: Request, db: Session):
     token = request.cookies.get("access_token")
     if not token:
