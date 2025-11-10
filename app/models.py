@@ -40,6 +40,8 @@ class Movement(Base):
     crocette: Mapped[int] = mapped_column(Integer, default=0)
     casse: Mapped[int] = mapped_column(Integer, default=0)
     rule_id: Mapped[int | None] = mapped_column(ForeignKey("rules.id"), nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True, default=None)
+
 
     member: Mapped[Member] = relationship(back_populates="movements")
     rule: Mapped[Rule | None] = relationship()
