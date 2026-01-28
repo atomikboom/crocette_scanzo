@@ -66,8 +66,11 @@
         <div class="text-xs opacity-70">Crocette da pagare</div>
         <div class="text-2xl font-bold">{{ totals.crocette_da_pagare }}</div>
       </div>
-      <div class="p-3 rounded-xl bg-indigo-900/30 border-l-2 border-indigo-500 md:col-span-1">
-        <div class="text-xs opacity-70">Cassa Totale Estimata</div>
+      <div
+        class="p-3 rounded-xl bg-indigo-900/30 border-l-2 border-indigo-500 md:col-span-1 shadow-lg shadow-indigo-500/10">
+        <div class="text-xs opacity-70 flex items-center gap-1">
+          💰 Cassa Totale Estimata
+        </div>
         <div class="text-2xl font-bold text-indigo-300">€{{ totals.crocette_da_pagare * 2 }}</div>
       </div>
     </div>
@@ -224,20 +227,30 @@
   </section>
 
   <!-- Punteggio Bagherone -->
-  <section class="p-4 rounded-2xl bg-neutral-800">
-    <h2 class="text-xl font-semibold mb-4">Punteggio Bagherone</h2>
+  <section class="p-4 rounded-2xl bg-neutral-800 border border-neutral-700/50 relative overflow-hidden">
+    <div class="absolute top-0 right-0 p-2">
+      <span class="flex h-2 w-2 relative">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-team opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-team"></span>
+      </span>
+    </div>
+    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+      🏆 Punteggio Bagherone
+    </h2>
     <div class="grid grid-cols-2 gap-4">
-      <div class="p-4 rounded-xl bg-neutral-900 text-center">
-        <div class="text-sm opacity-70">Giovani</div>
-        <div class="text-3xl font-extrabold">{{ bagherone.giovani }}</div>
+      <div class="p-4 rounded-xl bg-neutral-900 text-center border border-neutral-700/30">
+        <div class="text-xs uppercase tracking-widest opacity-60 mb-1">Giovani</div>
+        <div class="text-4xl font-black text-team">{{ bagherone.giovani }}</div>
       </div>
-      <div class="p-4 rounded-xl bg-neutral-900 text-center">
-        <div class="text-sm opacity-70">Vecchi</div>
-        <div class="text-3xl font-extrabold">{{ bagherone.vecchi }}</div>
+      <div class="p-4 rounded-xl bg-neutral-900 text-center border border-neutral-700/30">
+        <div class="text-xs uppercase tracking-widest opacity-60 mb-1">Vecchi</div>
+        <div class="text-4xl font-black text-white">{{ bagherone.vecchi }}</div>
       </div>
     </div>
-    <p class="text-xs opacity-60 mt-2">
-      Ultimo aggiornamento: {{ bagherone.updated_at.strftime('%d/%m/%Y %H:%M') if bagherone.updated_at else '—' }}
+    <p class="text-[10px] opacity-60 mt-3 flex items-center justify-center gap-1 uppercase tracking-tighter">
+      <span>Ultimo aggiornamento:</span>
+      <span class="font-bold">{{ bagherone.updated_at.strftime('%d/%m/%Y %H:%M') if bagherone.updated_at else '—'
+        }}</span>
     </p>
   </section>
 
