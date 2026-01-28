@@ -122,7 +122,7 @@
         data-last="{{ r.last.isoformat() if r.last else '' }}">
         <div class="font-semibold text-lg">{{ r.name }}</div>
         <div class="text-sm opacity-80">Ultimo saldo: {{ r.last.strftime('%d/%m/%Y %H:%M') if r.last else '—' }}</div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2 text-sm">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-sm">
           <div class="p-2 rounded bg-neutral-800">Crocette prese <div class="text-xl font-bold">{{ r.crocette_prese }}
             </div>
           </div>
@@ -131,6 +131,14 @@
           </div>
           <div class="p-2 rounded bg-neutral-800">Crocette da pagare <div class="text-xl font-bold">{{
               r.crocette_da_pagare }}</div>
+          </div>
+          <div
+            class="p-2 rounded bg-neutral-800 border-l-2 {% if r.balance > 0 %}border-green-500 bg-green-900/10{% elif r.balance < 0 %}border-red-500 bg-red-900/10{% else %}border-neutral-600{% endif %}">
+            Saldo
+            <div
+              class="text-xl font-bold {% if r.balance > 0 %}text-green-400{% elif r.balance < 0 %}text-red-400{% endif %}">
+              {{ '+' if r.balance > 0 else '' }}{{ r.balance }}
+            </div>
           </div>
         </div>
       </div>
@@ -142,7 +150,7 @@
   <section class="p-4 rounded-2xl bg-neutral-800">
     <div class="flex items-center justify-between">
       <h2 class="text-xl font-semibold mb-3">Questo Mese</h2>
-      <a href="/storico?kind=debit" class="text-sm underline opacity-80 hover:text-team">Vedi tutte le crocette prese →</a>
+      <a href="/storico" class="text-sm underline opacity-80 hover:text-team">Vedi tutti i movimenti →</a>
     </div>
     <ul class="space-y-2 text-sm max-h-80 overflow-auto">
       {% for m in last_month %}
@@ -157,7 +165,7 @@
           <span class="opacity-70">{{ m.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
           {% if user and user.role == 'admin' %}
           <form method="post" action="/movements/delete"
-                onsubmit="return confirm('Eliminare definitivamente questo movimento?');">
+            onsubmit="return confirm('Eliminare definitivamente questo movimento?');">
             <input type="hidden" name="movement_id" value="{{ m.id }}">
             <input type="hidden" name="next" value="/#saldi">
             <button class="px-2 py-1 rounded border border-neutral-700 text-xs hover:border-team" title="Elimina">
