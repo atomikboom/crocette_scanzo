@@ -150,9 +150,12 @@ async def index(request: Request, db: Session = Depends(get_db)):
     members = db.query(Member).all()
 
     rows = []
+    # Eseguiamo il calcolo aggregando i dati per ogni membro
     for m in members:
-        deb_croc = sum(x.crocette for x in m.movements if x.kind == "debit")
-        cre_croc = sum(x.crocette for x in m.movements if x.kind == "credit")
+        # Pre-carichiamo i movimenti per evitare il problema N+1 (anche se sqlite/neon lo gestiscono, è meglio essere espliciti in Python con list comprehension)
+        m_movements = m.movements
+        deb_croc = sum(x.crocette for x in m_movements if x.kind == "debit")
+        cre_croc = sum(x.crocette for x in m_movements if x.kind == "credit")
         rows.append({
             "id": m.id,
             "name": m.name,
@@ -160,7 +163,7 @@ async def index(request: Request, db: Session = Depends(get_db)):
             "crocette_pagate": cre_croc,
             "crocette_da_pagare": max(0, deb_croc - cre_croc),
             "balance": cre_croc - deb_croc,
-            "last": max([x.created_at for x in m.movements], default=None)
+            "last": max([x.created_at for x in m_movements], default=None)
         })
 
     totals = aggregate(db)
@@ -351,3 +354,19 @@ async def add_rule(user: User = Depends(get_current_user), db: Session = Depends
     db.add(Rule(title=title, description=description, crocette=crocette, casse=0))
     db.commit()
     return RedirectResponse("/admin?rule=ok", status_code=302)
+
+@app.post("/admin/bagherone")
+async def update_bagherone(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    giovani: int = Form(...),
+    vecchi: int = Form(...)
+):
+    if user.role != "admin":
+        return RedirectResponse("/", status_code=302)
+    
+    score = get_or_create_bagherone(db)
+    score.giovani = giovani
+    score.vecchi = vecchi
+    db.commit()
+    return RedirectResponse("/admin?bagherone=ok", status_code=303)
