@@ -212,17 +212,22 @@ async def admin_reseed(user: User = Depends(get_current_user)):
 @app.get("/storico", response_class=HTMLResponse)
 async def storico(request: Request,
                   kind: str = "all",
-                  member_id: int | None = Query(None),
+                  member_id: str | None = Query(None),
                   db: Session = Depends(get_db)):
     user = get_optional_user(request, db)
     members = db.query(Member).order_by(Member.name).all()
+
+    # Gestione member_id vuoto (stringa "" dal form HTML)
+    m_id = None
+    if member_id and member_id.strip().isdigit():
+        m_id = int(member_id)
 
     q = db.query(Movement).order_by(Movement.created_at.desc())
     kind = kind.lower().strip()
     if kind in ("debit", "credit"):
         q = q.filter(Movement.kind == kind)
-    if member_id:
-        q = q.filter(Movement.member_id == member_id)
+    if m_id:
+        q = q.filter(Movement.member_id == m_id)
 
     moves = q.all()
     total_crocette = sum(m.crocette for m in moves)
@@ -232,7 +237,8 @@ async def storico(request: Request,
         "moves": moves,
         "members": members,
         "kind": kind,
-        "member_id": member_id,
+        "member_id": m_id, # Usiamo l'ID numerico per i logica template se necessario
+        "member_id_str": member_id, # La stringa originale per il selettore
         "total": total_crocette,
         "user": user,
     })
