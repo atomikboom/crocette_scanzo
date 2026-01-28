@@ -117,20 +117,31 @@
         <span class="inline-block w-2 h-6 pill rounded"></span>
         <span class="font-bold">Dashboard Crocette</span>
       </a>
-      <nav class="flex items-center gap-3">
-        <a href="/" class="text-sm opacity-80 hover:opacity-100">Home</a>
-        <a href="/storico?kind=debit" class="text-sm opacity-80 hover:opacity-100">Storico</a>
+      <nav class="flex items-center gap-2 md:gap-4">
+        <a href="/" class="text-sm opacity-80 hover:opacity-100 hover:text-team transition-colors">Home</a>
+        <a href="/storico?kind=debit"
+          class="text-sm opacity-80 hover:opacity-100 hover:text-team transition-colors">Storico</a>
 
         {% if user %}
+        {% if user.role == 'admin' %}
+        <a href="/admin"
+          class="text-sm opacity-80 hover:opacity-100 hover:text-team transition-colors flex items-center gap-1">
+          ⚙️ <span class="hidden md:inline">Admin</span>
+        </a>
+        {% endif %}
+
         <a href="/movements"
-          class="ml-2 px-3 py-1 rounded-lg border border-neutral-700 hover:border-team hover:text-team text-sm">➕
-          Aggiungi</a>
-        <form method="post" action="/logout">
-          <button class="ml-2 px-3 py-1 rounded-lg border border-neutral-700 hover:border-team text-sm">Logout</button>
+          class="px-3 py-1 rounded-lg border border-neutral-700 hover:border-team hover:text-team text-sm transition-all flex items-center gap-1">
+          <span class="text-xs">➕</span> <span class="hidden md:inline">Aggiungi</span>
+        </a>
+
+        <form method="post" action="/logout" class="inline">
+          <button
+            class="px-3 py-1 rounded-lg border border-neutral-700 hover:border-team hover:text-red-400 text-sm transition-all">Logout</button>
         </form>
         {% else %}
         <a href="/login"
-          class="ml-2 px-3 py-1 rounded-lg border border-neutral-700 hover:border-team hover:text-team text-sm">Login</a>
+          class="px-3 py-1 rounded-lg border border-neutral-700 hover:border-team hover:text-team text-sm transition-all">Login</a>
         {% endif %}
 
         <button id="theme-toggle"
