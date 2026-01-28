@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, Request, Response, status, Form, HTTPException
+from fastapi import FastAPI, Depends, Request, Response, status, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -159,6 +159,7 @@ async def index(request: Request, db: Session = Depends(get_db)):
             "crocette_prese": deb_croc,
             "crocette_pagate": cre_croc,
             "crocette_da_pagare": max(0, deb_croc - cre_croc),
+            "balance": cre_croc - deb_croc,
             "last": max([x.created_at for x in m.movements], default=None)
         })
 
@@ -210,8 +211,8 @@ async def admin_reseed(user: User = Depends(get_current_user)):
 # ---- storico ----
 @app.get("/storico", response_class=HTMLResponse)
 async def storico(request: Request,
-                  kind: str = "debit",
-                  member_id: int | None = None,
+                  kind: str = "all",
+                  member_id: int | None = Query(None),
                   db: Session = Depends(get_db)):
     user = get_optional_user(request, db)
     members = db.query(Member).order_by(Member.name).all()
