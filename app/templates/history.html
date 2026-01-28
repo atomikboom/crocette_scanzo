@@ -23,7 +23,8 @@
       <select name="member_id" class="w-full px-3 py-2 rounded bg-neutral-900">
         <option value="">— Tutti —</option>
         {% for m in members %}
-        <option value="{{ m.id }}" {% if member_id and m.id==member_id %}selected{% endif %}>{{ m.name }}</option>
+        <option value="{{ m.id }}" {% if member_id_str and m.id|string==member_id_str %}selected{% endif %}>{{ m.name }}
+        </option>
         {% endfor %}
       </select>
     </div>
