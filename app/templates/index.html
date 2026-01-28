@@ -62,9 +62,13 @@
         <div class="text-xs opacity-70">Crocette pagate</div>
         <div class="text-2xl font-bold">{{ totals.crocette_pagate }}</div>
       </div>
-      <div class="p-3 rounded-xl bg-neutral-900">
+      <div class="p-3 rounded-xl bg-neutral-900 border-l-2 border-team">
         <div class="text-xs opacity-70">Crocette da pagare</div>
         <div class="text-2xl font-bold">{{ totals.crocette_da_pagare }}</div>
+      </div>
+      <div class="p-3 rounded-xl bg-indigo-900/30 border-l-2 border-indigo-500 md:col-span-1">
+        <div class="text-xs opacity-70">Cassa Totale Estimata</div>
+        <div class="text-2xl font-bold text-indigo-300">€{{ totals.crocette_da_pagare * 2 }}</div>
       </div>
     </div>
   </section>
@@ -117,10 +121,17 @@
     <h2 class="text-xl font-semibold mb-3">Elenco Nomi</h2>
     <div id="members" class="flex flex-col gap-3">
       {% for r in rows %}
-      <div class="p-3 rounded-xl bg-neutral-900 member" data-name="{{ r.name | lower }}"
-        data-cpre="{{ r.crocette_prese }}" data-cpay="{{ r.crocette_pagate }}" data-cdue="{{ r.crocette_da_pagare }}"
-        data-last="{{ r.last.isoformat() if r.last else '' }}">
-        <div class="font-semibold text-lg">{{ r.name }}</div>
+      <div
+        class="p-3 rounded-xl bg-neutral-900 member {% if r.crocette_da_pagare >= 10 %}ring-1 ring-red-500/50 bg-red-900/10{% endif %}"
+        data-name="{{ r.name | lower }}" data-cpre="{{ r.crocette_prese }}" data-cpay="{{ r.crocette_pagate }}"
+        data-cdue="{{ r.crocette_da_pagare }}" data-last="{{ r.last.isoformat() if r.last else '' }}">
+        <div class="flex items-center justify-between">
+          <div class="font-semibold text-lg">{{ r.name }}</div>
+          {% if r.crocette_da_pagare >= 10 %}
+          <span class="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded font-bold uppercase">Debitore
+            Critico</span>
+          {% endif %}
+        </div>
         <div class="text-sm opacity-80">Ultimo saldo: {{ r.last.strftime('%d/%m/%Y %H:%M') if r.last else '—' }}</div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-sm">
           <div class="p-2 rounded bg-neutral-800">Crocette prese <div class="text-xl font-bold">{{ r.crocette_prese }}
